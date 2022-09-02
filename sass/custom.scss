@@ -12,6 +12,10 @@ $red: red;
     font-size: 16px;
 }
 
+*:focus {
+    outline: 2px solid $green;
+}
+
 .playground {    
     margin-bottom: 1rem;
 
