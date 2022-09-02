@@ -1,0 +1,33 @@
+<script type="module">
+    import init, {evaluate} from "/languages/{{path | safe}}";
+    init()
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".{{name}}-playground").forEach(el => {
+            const input = el.querySelector(".input");
+            const output = el.querySelector(".output");
+            const status = el.querySelector(".status");
+            
+            el.addEventListener("submit", function submit(e) {
+                e.preventDefault();
+                try {
+                    const result = evaluate(input.innerText);
+                    output.innerText = result;
+                    output.classList.remove("error");
+                    status.classList.add("success");
+                    status.classList.remove("failure");
+                } catch (e) {
+                    output.innerText = e;
+                    output.classList.add("error");
+                    status.classList.remove("success");
+                    status.classList.add("failure");
+                }
+            });
+
+            input.addEventListener("input", function() {
+                status.classList.remove("success");
+                status.classList.remove("failure");
+            });
+        });
+    });
+</script>
