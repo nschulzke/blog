@@ -26,7 +26,7 @@ highlight_code = true
 author = "Nathan Schulzke"
 github = "https://github.com/nschulzke"
 
-katex = true
+katex = false
 
 # Menu items
 [[extra.menu]]
