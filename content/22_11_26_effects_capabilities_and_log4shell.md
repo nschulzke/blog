@@ -9,7 +9,7 @@ tags = ["Languages", "Effects", "Capabilities"]
 
 Just under a year ago, Alibaba publicly disclosed the Log4Shell vulnerability[^1], and for a few weeks Java developers everywhere were scrambling to patch their servers.
 
-For most, Log4Shell came completely out of the blue. Almost no one expected a logging library to access the internet at all, much less download .class files and load them. The very idea sounds absurd. For most use cases, a logging library is essentially a wrapper around an `if` statement and `String.format` to conditionally write to an output stream and (maybe) rotate a log file. Never mind the cavalier string santization: for Log4J to use JNDI at all came as a surprise.
+For most, Log4Shell came completely out of the blue. Almost no one expected a logging library to access the internet at all, much less download and execute remote code. The very idea sounds absurd. For most use cases, a logging library is essentially a wrapper around an `if` statement and `String.format` to conditionally write to an output stream and (maybe) rotate a log file. Never mind the cavalier string santization: for Log4J to use JNDI at all came as a surprise.
 
 In theory, the vulnerability should have been discovered far sooner: JNDI's vulnerability has been known for a while[^2]. Any one of the countless organizations using Log4J could have done an audit of the code (or even the documentation[^3]) and noticed that it had JNDI by default.  But no one noticed (or knew to care), and the bug remained undiscovered for over 7 years.
 
