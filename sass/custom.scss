@@ -15,8 +15,8 @@ $red: red;
 }
 
 .feed-icon {
-    display: inline-flex;
-    align-items: center;
+    display: grid;
+    place-items: center;
 }
 
 *:focus {
@@ -109,4 +109,47 @@ $red: red;
             }
         }
     }
+}
+
+.footnote-definition {
+    padding-top: 1rem;
+    border-top: 0.5px solid #e0e0e0;
+}
+
+.footnote-definition + .footnote-definition {
+    margin-top: 1rem;
+    padding-top: 0;
+    border: 0;
+}
+
+.footnote-definition sup {
+    vertical-align: baseline;
+    font-size: 1em;
+    margin-right: 0.25em;
+}
+
+.footnote-back {
+    margin-left: 0.25em;
+    font-weight: bold;
+}
+
+.footnote-reference {
+    vertical-align: baseline;
+}
+
+.footnote-reference a {
+    position: relative;
+    top: -0.4em;
+}
+
+pre code {
+    font-size: 1em;
+}
+
+.post-title, .post-line {
+    font-size: 2.15em;
+}
+
+blockquote {
+  margin: 1rem 0;
 }
