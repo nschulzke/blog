@@ -6,7 +6,7 @@ date = 2022-12-06T00:22:25-06:00
 tags = ["Languages", "Effects", "Capabilities"]
 +++
 
-One year ago, the Log4J logging library, which is widely used in the Java ecosystem, was hit by the Log4Shell vulnerability. This bug allowed attackers to execute arbitrary code on a server running Log4J by sending a carefully crafted log message.
+One year ago, the Log4J logging library, which is widely used in the Java ecosystem, was hit by the Log4Shell vulnerability.[^1] This bug allowed attackers to execute arbitrary code on a server running Log4J by sending a carefully crafted log message.
 
 The vulnerability was caused by a flaw in how Log4J handled log messages that contained JNDI references. JNDI is a Java API that lets applications access naming and directory services, like LDAP and DNS. In the case of Log4Shell, the attacker was able to use JNDI references in a log message to remotely run code on the vulnerable server.
 
@@ -16,7 +16,7 @@ Most Log4J users were shocked to learn that the library could access the interne
 
 Ken Thompson, in his 1983 Turing Award lecture "Reflections on Trusting Trust", warned about trusting code you did not write:
 
-> You can't trust code that you did not totally create yourself. ... No amount of source-level verification or scrutiny will protect you from using untrusted code.[^4]
+> You can't trust code that you did not totally create yourself. ... No amount of source-level verification or scrutiny will protect you from using untrusted code.[^2]
 
 Thompson argues that a manual audit of even a *small* amount of external code is insufficient to determine if it is trustworthy. If you do not trust the author of the code, you cannot reasonably trust the code, no matter how much you've looked through it.
 
@@ -38,7 +38,7 @@ There are two language features I am aware of that are perfectly suited to solvi
 
 # Capabilities
 
-Capabilities[^5] are a means of controlling authorization by restricting the use of a sensitive resource to code that has been granted an unforgeable access token. In an Object Oriented language, a reference to an object can (if unforgeable) function as a capability: if you do not have a reference to the object, you cannot call any of its methods. To implement a capabilities-based security model in an OO language, you make it impossible to instantiate security-sensitive objects directly, instead requiring they be passed in from further up the call tree.
+Capabilities[^3] are a means of controlling authorization by restricting the use of a sensitive resource to code that has been granted an unforgeable access token. In an Object Oriented language, a reference to an object can (if unforgeable) function as a capability: if you do not have a reference to the object, you cannot call any of its methods. To implement a capabilities-based security model in an OO language, you make it impossible to instantiate security-sensitive objects directly, instead requiring they be passed in from further up the call tree.
 
 In Java today, any piece of code can get a handle for any file for reading or writing, as long as the OS gives permission:
 
@@ -81,7 +81,7 @@ If the only way to get access to JNDI were to get it through the `Host` object, 
 
 The major flaw in the capabilities implementation shown above is that there is a lot of boilerplate involved in passing around object handles instead of being able to construct them on the fly deep in nested code. This could result in programmers passing the whole `Host` object far deeper in the code than is strictly necessary, weakening the security of their applications (though it wouldn't ever get weaker than it currently is).
 
-The boilerplate could be aleviated with a feature like Scala 3's context parameters.[^6] The capabilities required would remain in the function signatures, easy to inspect at every level of the code, but wouldn't need to be explicitly provided as long as they're available in the caller.
+The boilerplate could be aleviated with a feature like Scala 3's context parameters.[^4] The capabilities required would remain in the function signatures, easy to inspect at every level of the code, but wouldn't need to be explicitly provided as long as they're available in the caller.
 
 # Effects
 
@@ -192,13 +192,9 @@ Successfully implementing either approach in an existing language would require 
 
 [^1]: [See this article for background on Log4Shell and JNDI.](https://www.shiftleft.io/blog/log4shell-jndi-injection-via-attackable-log4j/) For this post, it's sufficient to know that JNDI is a Java feature that allows executing remote code, and Log4J intentionally allowed using JNDI when logging, which created the vulnerability known as Log4Shell.
 
-[^2]: [https://www.veracode.com/blog/research/exploiting-jndi-injections-java](https://www.veracode.com/blog/research/exploiting-jndi-injections-java)
-
-[^3]: [http://web.archive.org/web/20211127190733/https://logging.apache.org/log4j/2.x/manual/lookups.html](http://web.archive.org/web/20211127190733/https://logging.apache.org/log4j/2.x/manual/lookups.html)
-
-[^4]: [https://dl.acm.org/doi/pdf/10.1145/358198.358210](https://dl.acm.org/doi/pdf/10.1145/358198.358210)
+[^2]: [https://dl.acm.org/doi/pdf/10.1145/358198.358210](https://dl.acm.org/doi/pdf/10.1145/358198.358210)
 
 
-[^5]: [https://en.wikipedia.org/wiki/Object-capability_model](https://en.wikipedia.org/wiki/Object-capability_model)
+[^3]: [https://en.wikipedia.org/wiki/Object-capability_model](https://en.wikipedia.org/wiki/Object-capability_model)
 
-[^6]: [https://docs.scala-lang.org/scala3/reference/contextual/using-clauses.html](https://docs.scala-lang.org/scala3/reference/contextual/using-clauses.html)
+[^4]: [https://docs.scala-lang.org/scala3/reference/contextual/using-clauses.html](https://docs.scala-lang.org/scala3/reference/contextual/using-clauses.html)
