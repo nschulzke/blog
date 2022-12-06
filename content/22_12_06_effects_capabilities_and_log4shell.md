@@ -1,17 +1,17 @@
 +++
 title = "Effects, Capabilities, and Log4Shell"
-date = 2022-11-26T12:22:25-06:00
+date = 2022-12-06T00:22:25-06:00
 draft = true
 
 [taxonomies]
 tags = ["Languages", "Effects", "Capabilities"]
 +++
 
-Just under a year ago, Alibaba publicly disclosed the Log4Shell vulnerability[^1], and for a few weeks Java developers everywhere were scrambling to patch their servers.
+One year ago, the Log4J logging library, which is widely used in the Java ecosystem, was hit by the Log4Shell vulnerability. This bug allowed attackers to execute arbitrary code on a server running Log4J by sending a carefully crafted log message.
 
-For most, Log4Shell came completely out of the blue. Almost no one expected a logging library to access the internet at all, much less download and execute remote code. The very idea sounds absurd. For most use cases, a logging library is essentially a wrapper around an `if` statement and `String.format` to conditionally write to an output stream and (maybe) rotate a log file. Never mind the cavalier string santization: for Log4J to use JNDI at all came as a surprise.
+The vulnerability was caused by a flaw in how Log4J handled log messages that contained JNDI references. JNDI is a Java API that lets applications access naming and directory services, like LDAP and DNS. In the case of Log4Shell, the attacker was able to use JNDI references in a log message to remotely run code on the vulnerable server.
 
-In theory, the vulnerability should have been discovered far sooner: JNDI's vulnerability has been known for a while[^2]. Any one of the countless organizations using Log4J could have done an audit of the code (or even the documentation[^3]) and noticed that it had JNDI by default.  But no one noticed (or knew to care), and the bug remained undiscovered for over 7 years.
+Most Log4J users were shocked to learn that the library could access the internet and execute remote code, since it's usually used for more basic tasks like formatting log messages and rotating log files. The inclusion of JNDI lookups in Log4J was intentional, but few people who were using the library knew about or wanted this feature.
 
 # Trusting trust
 
@@ -35,7 +35,7 @@ This extends to each feature you might use. Do you need to bind to a port? Then 
 
 In order to safely use open-source software, our languages need to fix this flaw. We need to be able to bring in libraries that we trust to a point, but no further. I should be able to add a logging library and be 100% confident that it isn't talking to external servers, much less downloading and executing remote code. I should be able to bring in a linear algebra library and know that it isn't accessing the filesystem. I should be able to look at each call to external code and, from the call site, *know* what it is allowed to do.
 
-There are two language features I am aware of that are perfectly suited to solving this problem: Capabilities and Effects. In the rest of this post I'm going to give a brief introduction to these two concepts, with links for those who wish to explore more. I'll be using some made-up syntax to shoehorn these concepts onto Java for the sake of example, but I'm not advocating for a particular implementation, just illustrating the concepts.
+There are two language features I am aware of that are perfectly suited to solving this problem: Capabilities and Effects. In the rest of this post I'm going to give a brief introduction to these two concepts, with links for those who wish to explore more. I'll be using some made-up syntax to bolt these concepts onto Java for the sake of example, but I'm not advocating for a particular implementation, just illustrating the concepts.
 
 # Capabilities
 
@@ -52,7 +52,7 @@ public class ReadFile {
 }
 ```
 
-In this example, we're accessing the file directly within the main method, but it would be entirely possible for this exact code to run deep in some library (or within a class retrieved via JNDI). Compromised code can use this feature to wreak havoc.
+In this example, we're accessing the file directly within the main method, but it would be entirely possible for this exact code to run deep in some library. Compromised code can use this feature to wreak havoc.
 
 In contrast, this is what a capabilities model might look like in Java:
 
@@ -72,7 +72,7 @@ Under this model, Log4J would have had to receive the *capability* to use JNDI f
 ```java
 public class LogExample {
     public static void main(String[] args, Host host) {
-        Logger logger = LogManager.getLogger(host.getJndiContext());
+        Logger logger = LogManager.getLogger(host.requestJndiContext());
     }
 }
 ```
@@ -88,7 +88,9 @@ The boilerplate could be aleviated with a feature like Scala 3's context paramet
 
 Where capabilities lend themselves well to an object-oriented style, effects originate in the functional programming world. In their original context, they're intended to be used for handling all side effects, but they could also easily be scoped to only handle security-sensitive effects.
 
-An effect system is a means of tracking and managing side effects in the type system, similar to Java's checked exceptions but more general. You can think of them as resumable exceptions. The side effects a function can perform are encoded in its signature, and functions further up the call chain can either handle the effect or pass it along. After an effect is handled, the handler returns control to the original code.
+An effect system is a way of tracking and managing side effects in a programming language's type system. They are similar to Java's checked exceptions, but more general and flexible. In an effect system, the side effects that a function can perform are specified in its signature. Functions that call other functions can either handle the effects themselves or pass them along to other functions higher up in the call chain. After an effect has been handled, the code that originally performed the effect can resume execution.
+
+You can think of an effect system as a kind of "resumable exception" mechanism. It allows developers to specify and enforce constraints on the ways that code can interact with external resources, such as the file system or the network. Because this information is included in the function signature, it becomes glaringly obvious what sorts of vulnerabilities any given library is at risk of.
 
 For example, loading a file can be implemented as an effect that a function `performs` (which is used the same way as `throws` is for exceptions):
 
