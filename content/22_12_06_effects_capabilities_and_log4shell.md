@@ -1,7 +1,6 @@
 +++
 title = "Effects, Capabilities, and Log4Shell"
 date = 2022-12-06T00:22:25-06:00
-draft = true
 
 [taxonomies]
 tags = ["Languages", "Effects", "Capabilities"]
