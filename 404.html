@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+<title>404 | nschulzke</title>
+
+
+
+<meta property="og:title" content="404">
+
+
+
+<meta name="author" content="Nathan Schulzke">
+
+
+<meta property="og:locale" content="en-US">
+
+
+<meta name="description" content="Explorations in language.">
+<meta property="og:description" content="Explorations in language.">
+
+
+
+<link rel="canonical" href="https://nschulzke.com/404.html">
+<meta property="og:url" content="https://nschulzke.com/404.html">
+
+
+
+<meta property="og:site_name" content="nschulzke" />
+
+
+
+
+
+
+
+
+
+
+
+  <meta name="twitter:card" content="summary">
+
+
+
+  <meta property="twitter:title" content="404">
+
+
+
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "author": {
+    "@type":"Person",
+	  "name":"Nathan Schulzke",
+  },
+  "description": "Explorations in language.",
+  "url": "https://nschulzke.com/404.html",
+  "@context":"https://schema.org",
+  "@type": "WebPage",
+  "headline": "404"
+  
+}
+</script>
+
+  <link rel="stylesheet" href="https://nschulzke.com/main.css">
+  <link rel="stylesheet" href="https://nschulzke.com/custom.css">
+
+  
+    <link type="application/atom+xml" rel="alternate" href="https://nschulzke.com/atom.xml" title="nschulzke" />
+  
+
+  
+
+  
+  
+</head>
+
+<body>
+  
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="https://nschulzke.com">
+        <h2 class="nav-title">nschulzke</h2>
+      </a>
+      <ul>
+        
+          
+            <li><a href="https://nschulzke.com">Home</a></li>
+          
+            <li><a href="https://nschulzke.com/tags">Tags</a></li>
+          
+        
+        <li>
+          <a href="/atom.xml" class="feed-icon" area-label="atom feed">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-rss" viewBox="0 0 16 16">
+              <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+              <path d="M5.5 12a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-3-8.5a1 1 0 0 1 1-1c5.523 0 10 4.477 10 10a1 1 0 1 1-2 0 8 8 0 0 0-8-8 1 1 0 0 1-1-1zm0 4a1 1 0 0 1 1-1 6 6 0 0 1 6 6 1 1 0 1 1-2 0 4 4 0 0 0-4-4 1 1 0 0 1-1-1z"/>
+            </svg>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  
+
+  <main>
+    
+<div class="notfound">
+	<h1 class="notfound-error">404: Page not found</h1>
+	<div class="notfound-line"></div>
+	<p class="notfound-message">
+		Oops! We can&#x27;t seem to find the page you are looking for. Let&#x27;s
+		<a href="https://nschulzke.com">head back home</a>.
+	</p>
+	<p></p>
+</div>
+
+  </main>
+
+  
+  <footer>
+    <span>&copy; 2022 Nathan Schulzke. Made with <a href="https://www.getzola.org">Zola</a> using the <a
+          href="https://github.com/aaranxu/tale-zola">Tale-Zola</a> theme.</span>
+  </footer>
+  
+  <script>
+    // Copied from https://github.com/getzola/zola/issues/1070#issuecomment-1166637092
+    // The DOMContentLoaded event fires when the initial HTML
+    // document has been completely loaded and parsed, without
+    // waiting for stylesheets, images, and subframes to finish loading.
+    document.addEventListener('DOMContentLoaded', (_event) => {
+      const references = document.getElementsByClassName('footnote-reference')
+      // For each footnote reference, set an id so we can refer to it from the definition.
+      // If the definition had an id of 'some_id', then the reference has id `some_id_ref`.
+      for (const reference of references) {
+        const link = reference.firstChild
+        const id = link.getAttribute('href').slice(1) // skip the '#'
+        link.setAttribute('id', `${id}_ref`)
+      }
+
+      const footnotes = document.getElementsByClassName('footnote-definition')
+      // For each footnote-definition, add an anchor element with an href to its corresponding reference.
+      // The text used for the added anchor is 'Leftwards Arrow with Hook' (U+21A9).
+      for (const footnote of footnotes) {
+        const id = footnote.getAttribute('id')
+        const backReference = document.createElement('a')
+        backReference.setAttribute('href', `#${id}_ref`)
+        backReference.classList.add('footnote-back')
+        backReference.textContent = '↩'
+        footnote.append(backReference)
+      }
+    });
+  </script>
+</body>
+</html>

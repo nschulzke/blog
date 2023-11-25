@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+<title>Effects, Capabilities, and Log4Shell | nschulzke</title>
+
+
+
+<meta property="og:title" content="Effects, Capabilities, and Log4Shell">
+
+
+
+<meta name="author" content="Nathan Schulzke">
+
+
+<meta property="og:locale" content="en-US">
+
+
+<meta name="description" content="Explorations in language.">
+<meta property="og:description" content="Explorations in language.">
+
+
+
+<link rel="canonical" href="https://nschulzke.com/22-12-06-effects-capabilities-and-log4shell/">
+<meta property="og:url" content="https://nschulzke.com/22-12-06-effects-capabilities-and-log4shell/">
+
+
+
+<meta property="og:site_name" content="nschulzke" />
+
+
+
+
+
+  <meta property="og:type" content="article" />
+  <meta property="article:published_time" content="2022-12-06T00:22:25-06:00">
+
+
+
+
+
+
+
+  <meta name="twitter:card" content="summary">
+
+
+
+  <meta property="twitter:title" content="Effects, Capabilities, and Log4Shell">
+
+
+
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "author": {
+    "@type":"Person",
+	  "name":"Nathan Schulzke",
+  },
+  "description": "Explorations in language.",
+  "url": "https://nschulzke.com/22-12-06-effects-capabilities-and-log4shell/",
+  "@context":"https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Effects, Capabilities, and Log4Shell"
+  
+    
+    
+      "datePublished":"2022-12-06T00:22:25-06:00",
+    
+    "mainEntityOfPage":{
+      "@type":"WebPage",
+      "@id":"https://nschulzke.com/22-12-06-effects-capabilities-and-log4shell/"
+    },
+  
+}
+</script>
+
+  <link rel="stylesheet" href="https://nschulzke.com/main.css">
+  <link rel="stylesheet" href="https://nschulzke.com/custom.css">
+
+  
+    <link type="application/atom+xml" rel="alternate" href="https://nschulzke.com/atom.xml" title="nschulzke" />
+  
+
+  
+
+  
+  
+</head>
+
+<body>
+  
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="https://nschulzke.com">
+        <h2 class="nav-title">nschulzke</h2>
+      </a>
+      <ul>
+        
+          
+            <li><a href="https://nschulzke.com">Home</a></li>
+          
+            <li><a href="https://nschulzke.com/tags">Tags</a></li>
+          
+        
+        <li>
+          <a href="/atom.xml" class="feed-icon" area-label="atom feed">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-rss" viewBox="0 0 16 16">
+              <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+              <path d="M5.5 12a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-3-8.5a1 1 0 0 1 1-1c5.523 0 10 4.477 10 10a1 1 0 1 1-2 0 8 8 0 0 0-8-8 1 1 0 0 1-1-1zm0 4a1 1 0 0 1 1-1 6 6 0 0 1 6 6 1 1 0 1 1-2 0 4 4 0 0 0-4-4 1 1 0 0 1-1-1z"/>
+            </svg>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  
+
+  <main>
+    
+  <div class="post">
+  	<div class="post-info">
+  		<span>Written by</span> Nathan Schulzke<br>
+  		<span>on&nbsp;</span><time datetime="2022-12-06T00:22:25-06:00">December  6, 2022</time>
+  	</div>
+  	<h1 class="post-title">Effects, Capabilities, and Log4Shell</h1>
+  	<div class="post-line"></div>
+  	<p>One year ago, the Log4J logging library, which is widely used in the Java ecosystem, was hit by the Log4Shell vulnerability.<sup class="footnote-reference"><a href="#1">1</a></sup> This bug allowed attackers to execute arbitrary code on a server running Log4J by sending a carefully crafted log message.</p>
+<p>The vulnerability was caused by a flaw in how Log4J handled log messages that contained JNDI references. JNDI is a Java API that lets applications access naming and directory services, like LDAP and DNS. In the case of Log4Shell, the attacker was able to use JNDI references in a log message to remotely run code on the vulnerable server.</p>
+<p>Most Log4J users were shocked to learn that the library could access the internet and execute remote code, since it's usually used for more basic tasks like formatting log messages and rotating log files. The inclusion of JNDI lookups in Log4J was intentional, but few people who were using the library knew about or wanted this feature.</p>
+<h1 id="trusting-trust">Trusting trust</h1>
+<p>Ken Thompson, in his 1983 Turing Award lecture &quot;Reflections on Trusting Trust&quot;, warned about trusting code you did not write:</p>
+<blockquote>
+<p>You can't trust code that you did not totally create yourself. ... No amount of source-level verification or scrutiny will protect you from using untrusted code.<sup class="footnote-reference"><a href="#2">2</a></sup></p>
+</blockquote>
+<p>Thompson argues that a manual audit of even a <em>small</em> amount of external code is insufficient to determine if it is trustworthy. If you do not trust the author of the code, you cannot reasonably trust the code, no matter how much you've looked through it.</p>
+<p>Today our systems are built with an ever-increasing amount of external, open-source code. This has been a tremendous boon for productivity across the entire industry because we no longer have to reinvent the wheel with each project. What is becoming apparent is that the cost of this speed is that we now trust an increasing number of people with the fate of our own software.</p>
+<p>If, as Thompson argues, we cannot rely on manual verification, we have three main options: accept our vulnerability, abandon open source, or find a tool that can reliably verify code safety for us. Unfortunately, our current tools weren't designed to cope with this explosion of third-party code. Most OSes default to assuming that any executable that a given user runs should have the same privileges as any other executable. Our languages, in turn, assume that all code that runs within a single program is equally trustworthy.</p>
+<p>These assumptions are no longer valid. Code that is written by an internal team is far more trustworthy than code that comes from further up the supply chain. Even if the OS were to be made more secure, not every privilege granted to our first-party code should be made transitively available to third-party libraries. In order to solve the software supply-chain crisis without losing open source, our languages must adapt to the new environment.</p>
+<h1 id="language-level-security">Language-level security</h1>
+<p>Trust is the fatal flaw in almost every modern programming language. They assume that <em>all</em> code should be allowed to do anything that the OS is willing to allow <em>any</em> code to do. In the case of Log4Shell, Java not only grants access to JNDI lookups unless explicitly disabled, it assumes that if <em>any</em> code needs access to JNDI then <em>all</em> code should have access to it.</p>
+<p>This extends to each feature you might use. Do you need to bind to a port? Then all code in your project can bind to a port. Do you need to read from a file? Then all code in your project can read from that file (and if you're not careful with OS permissions, from the entire filesystem). Do you need to talk to external services? Then any library can phone home for any reason.</p>
+<p>In order to safely use open-source software, our languages need to fix this flaw. We need to be able to bring in libraries that we trust to a point, but no further. I should be able to add a logging library and be 100% confident that it isn't talking to external servers, much less downloading and executing remote code. I should be able to bring in a linear algebra library and know that it isn't accessing the filesystem. I should be able to look at each call to external code and, from the call site, <em>know</em> what it is allowed to do.</p>
+<p>There are two language features I am aware of that are perfectly suited to solving this problem: Capabilities and Effects. In the rest of this post I'm going to give a brief introduction to these two concepts, with links for those who wish to explore more. I'll be using some made-up syntax to bolt these concepts onto Java for the sake of example, but I'm not advocating for a particular implementation, just illustrating the concepts.</p>
+<h1 id="capabilities">Capabilities</h1>
+<p>Capabilities<sup class="footnote-reference"><a href="#3">3</a></sup> are a means of controlling authorization by restricting the use of a sensitive resource to code that has been granted an unforgeable access token. In an Object Oriented language, a reference to an object can (if unforgeable) function as a capability: if you do not have a reference to the object, you cannot call any of its methods. To implement a capabilities-based security model in an OO language, you make it impossible to instantiate security-sensitive objects directly, instead requiring they be passed in from further up the call tree.</p>
+<p>In Java today, any piece of code can get a handle for any file for reading or writing, as long as the OS gives permission:</p>
+<pre data-lang="java" style="background-color:#ffffff;color:#010101;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#014a69;">public </span><span style="color:#877611;">class </span><span style="color:#a15001;">ReadFile </span><span>{
+</span><span>    </span><span style="color:#014a69;">public static </span><span style="color:#877611;">void </span><span style="color:#a15001;">main</span><span>(</span><span style="color:#646409;">String</span><span style="color:#014a69;">[] </span><span style="color:#696989;">args</span><span>) {
+</span><span>        </span><span style="color:#646409;">File</span><span> file </span><span style="color:#016692;">= new </span><span style="color:#646409;">File</span><span>(</span><span style="color:#009f78;">&quot;top_secret_data.txt&quot;</span><span>);
+</span><span>        </span><span style="color:#898989;">// Now I can do anything with this file
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>In this example, we're accessing the file directly within the main method, but it would be entirely possible for this exact code to run deep in some library. Compromised code can use this feature to wreak havoc.</p>
+<p>In contrast, this is what a capabilities model might look like in Java:</p>
+<pre data-lang="java" style="background-color:#ffffff;color:#010101;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#014a69;">public </span><span style="color:#877611;">class </span><span style="color:#a15001;">ReadFile </span><span>{
+</span><span>    </span><span style="color:#014a69;">public static </span><span style="color:#877611;">void </span><span style="color:#a15001;">main</span><span>(</span><span style="color:#646409;">String</span><span style="color:#014a69;">[] </span><span style="color:#696989;">args</span><span>, </span><span style="color:#646409;">Host </span><span style="color:#696989;">host</span><span>) {
+</span><span>        </span><span style="color:#646409;">File</span><span> file </span><span style="color:#016692;">=</span><span> host.</span><span style="color:#696989;">requestFile</span><span>(</span><span style="color:#009f78;">&quot;top_secret_data.txt&quot;</span><span>);
+</span><span>        </span><span style="color:#898989;">// Now I can do anything with this file
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>In the capabilities version of Java, we remove the public constructor for <code>File</code> and replace it with a call to a <code>Host</code> object that is passed into <code>main</code> by the runtime. The only way to get access to <em>any</em> sensitive resource is to request it from the <code>Host</code>.</p>
+<p>Under this model, Log4J would have had to receive the <em>capability</em> to use JNDI from <code>Host</code>. This could be done by requesting <code>Host</code> directly, but that would put up red flags for security. Instead, they would need to provide a version of <code>getLogger</code> that requests a JNDI context:</p>
+<pre data-lang="java" style="background-color:#ffffff;color:#010101;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#014a69;">public </span><span style="color:#877611;">class </span><span style="color:#a15001;">LogExample </span><span>{
+</span><span>    </span><span style="color:#014a69;">public static </span><span style="color:#877611;">void </span><span style="color:#a15001;">main</span><span>(</span><span style="color:#646409;">String</span><span style="color:#014a69;">[] </span><span style="color:#696989;">args</span><span>, </span><span style="color:#646409;">Host </span><span style="color:#696989;">host</span><span>) {
+</span><span>        </span><span style="color:#646409;">Logger</span><span> logger </span><span style="color:#016692;">= </span><span style="color:#646409;">LogManager</span><span>.</span><span style="color:#696989;">getLogger</span><span>(host.</span><span style="color:#696989;">requestJndiContext</span><span>());
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>If the only way to get access to JNDI were to get it through the <code>Host</code> object, and the only way to get access to the <code>Host</code> object is through the <code>main</code> function, then JNDI becomes opt-in and, what's more, finely controlled: no application can accidentally use JNDI, and in any application that <em>needs</em> JNDI we can easily verify which modules were granted access.</p>
+<p>The major flaw in the capabilities implementation shown above is that there is a lot of boilerplate involved in passing around object handles instead of being able to construct them on the fly deep in nested code. This could result in programmers passing the whole <code>Host</code> object far deeper in the code than is strictly necessary, weakening the security of their applications (though it wouldn't ever get weaker than it currently is).</p>
+<p>The boilerplate could be aleviated with a feature like Scala 3's context parameters.<sup class="footnote-reference"><a href="#4">4</a></sup> The capabilities required would remain in the function signatures, easy to inspect at every level of the code, but wouldn't need to be explicitly provided as long as they're available in the caller.</p>
+<h1 id="effects">Effects</h1>
+<p>Where capabilities lend themselves well to an object-oriented style, effects originate in the functional programming world. In their original context, they're intended to be used for handling all side effects, but they could also easily be scoped to only handle security-sensitive effects.</p>
+<p>An effect system is a way of tracking and managing side effects in a programming language's type system. They are similar to Java's checked exceptions, but more general and flexible. In an effect system, the side effects that a function can perform are specified in its signature. Functions that call other functions can either handle the effects themselves or pass them along to other functions higher up in the call chain. After an effect has been handled, the code that originally performed the effect can resume execution.</p>
+<p>You can think of an effect system as a kind of &quot;resumable exception&quot; mechanism. It allows developers to specify and enforce constraints on the ways that code can interact with external resources, such as the file system or the network. Because this information is included in the function signature, it becomes glaringly obvious what sorts of vulnerabilities any given library is at risk of.</p>
+<p>For example, loading a file can be implemented as an effect that a function <code>performs</code> (which is used the same way as <code>throws</code> is for exceptions):</p>
+<pre data-lang="java-effects" style="background-color:#ffffff;color:#010101;" class="language-java-effects "><code class="language-java-effects" data-lang="java-effects"><span style="color:#014a69;">public </span><span style="color:#877611;">class </span><span style="color:#a15001;">ReadFile </span><span>{
+</span><span>    </span><span style="color:#014a69;">public static </span><span style="color:#877611;">void </span><span style="color:#a15001;">main</span><span>(</span><span style="color:#646409;">String</span><span style="color:#014a69;">[] </span><span style="color:#696989;">args</span><span>) </span><span style="color:#016692;">performs </span><span style="color:#646409;">OpenFile </span><span>{
+</span><span>        </span><span style="color:#646409;">Optional</span><span>&lt;</span><span style="color:#646409;">File</span><span>&gt; file </span><span style="color:#016692;">= perform new </span><span style="color:#646409;">OpenFile</span><span>(</span><span style="color:#009f78;">&quot;top_secret_data.txt&quot;</span><span>);
+</span><span>        </span><span style="color:#898989;">// Now I can do anything with this file
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>The <code>perform</code> keyword is the equivalent of <code>throw</code> for exceptions: it hands control up the stack to the next handler, in this case directly to the runtime. The difference is that <code>perform</code> is an expression: it evaluates to the result generated by the handler.</p>
+<p>The type that it evaluates to is defined as part of the effect:</p>
+<pre data-lang="java-effects" style="background-color:#ffffff;color:#010101;" class="language-java-effects "><code class="language-java-effects" data-lang="java-effects"><span style="color:#014a69;">public </span><span style="color:#877611;">class </span><span style="color:#a15001;">OpenFile </span><span style="color:#016692;">implements </span><span style="font-style:italic;color:#d19264;">Effect</span><span>&lt;</span><span style="color:#646409;">Optional</span><span>&lt;</span><span style="color:#646409;">File</span><span>&gt;&gt; {
+</span><span>    </span><span style="color:#014a69;">public </span><span style="color:#a15001;">OpenFile</span><span>(</span><span style="color:#646409;">String </span><span style="color:#696989;">pathname</span><span>) {
+</span><span>        </span><span style="color:#898989;">// ...
+</span><span>    }
+</span><span>    </span><span style="color:#898989;">// ...
+</span><span>}
+</span></code></pre>
+<p>If Java had an effect system, Log4J could have implemented JNDI lookup as an effect:</p>
+<pre data-lang="java-effects" style="background-color:#ffffff;color:#010101;" class="language-java-effects "><code class="language-java-effects" data-lang="java-effects"><span style="color:#014a69;">public </span><span style="color:#877611;">interface </span><span style="color:#a15001;">JndiLogger </span><span>{
+</span><span>    </span><span style="color:#877611;">void </span><span style="color:#a15001;">debug</span><span>(</span><span style="color:#646409;">CharSequence </span><span style="color:#696989;">message</span><span>) </span><span style="color:#016692;">performs </span><span style="color:#646409;">JndiLookup
+</span><span>}
+</span></code></pre>
+<p>Similar to a checked exception, because <code>JndiLogger</code> declares that <code>debug</code> performs a <code>JndiLookup</code>, our calling code must either handle that effect or declare that it, too, <code>performs</code> the lookup:</p>
+<pre data-lang="java-effects" style="background-color:#ffffff;color:#010101;" class="language-java-effects "><code class="language-java-effects" data-lang="java-effects"><span style="color:#014a69;">public </span><span style="color:#877611;">class </span><span style="color:#a15001;">LogExample </span><span>{
+</span><span>    </span><span style="color:#014a69;">public static </span><span style="color:#877611;">void </span><span style="color:#a15001;">main</span><span>(</span><span style="color:#646409;">String</span><span style="color:#014a69;">[] </span><span style="color:#696989;">args</span><span>) </span><span style="color:#016692;">performs </span><span style="color:#646409;">JndiLookup </span><span>{
+</span><span>        </span><span style="color:#646409;">JndiLogger</span><span> logger </span><span style="color:#016692;">= </span><span style="color:#646409;">LogManager</span><span>.</span><span style="color:#696989;">getJndiLogger</span><span>();
+</span><span>        </span><span style="color:#646409;">JndiLogger</span><span>.</span><span style="color:#696989;">debug</span><span>(</span><span style="color:#009f78;">&quot;Here is a log message.&quot;</span><span>);
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>As with the <code>OpenFile</code> example, here we are just letting the runtime handle the effect, but we don't have to. Just like with an exception, we can handle an effect. For example, we can check that the effect is safe before we let it through:</p>
+<pre data-lang="java-effects" style="background-color:#ffffff;color:#010101;" class="language-java-effects "><code class="language-java-effects" data-lang="java-effects"><span style="color:#014a69;">public </span><span style="color:#877611;">class </span><span style="color:#a15001;">LogExample </span><span>{
+</span><span>    </span><span style="color:#014a69;">public static </span><span style="color:#877611;">void </span><span style="color:#a15001;">main</span><span>(</span><span style="color:#646409;">String</span><span style="color:#014a69;">[] </span><span style="color:#696989;">args</span><span>) </span><span style="color:#016692;">performs </span><span style="color:#646409;">JndiLookup </span><span>{
+</span><span>        </span><span style="color:#646409;">JndiLogger</span><span> logger </span><span style="color:#016692;">= </span><span style="color:#646409;">LogManager</span><span>.</span><span style="color:#696989;">getJndiLogger</span><span>();
+</span><span>        </span><span style="color:#016692;">try </span><span>{
+</span><span>            </span><span style="color:#646409;">JndiLogger</span><span>.</span><span style="color:#696989;">debug</span><span>(</span><span style="color:#009f78;">&quot;Here is a log message.&quot;</span><span>);
+</span><span>        } </span><span style="color:#016692;">handle </span><span>(</span><span style="color:#646409;">JndiLookup</span><span> lookup) {
+</span><span>            </span><span style="color:#016692;">if </span><span>(lookup.</span><span style="color:#696989;">getName</span><span>().</span><span style="color:#696989;">contains</span><span>(</span><span style="color:#009f78;">&quot;ldap&quot;</span><span>)) {
+</span><span>                </span><span style="color:#898989;">// Resume to caller without a lookup
+</span><span>                </span><span style="color:#016692;">resume </span><span style="color:#009f78;">&quot;[dangerous JNDI lookup]&quot;</span><span>;
+</span><span>            } </span><span style="color:#016692;">else </span><span>{
+</span><span>                </span><span style="color:#898989;">// This is a safe request, so let it through
+</span><span>                </span><span style="color:#016692;">resume perform</span><span> lookup;
+</span><span>            }
+</span><span>        }
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>The <code>resume</code> keyword is similar to <code>return</code>: it returns control to the function that originally performed the effect, providing it with the specified value. In this example, we either provide a hard-coded string <em>or</em> we provide the result of performing the lookup, depending on whether the JNDI lookup attempts to use LDAP (in the real world we'd want a more complete check, obviously).</p>
+<p>Alternatively, we can also handle the effect in all cases, in which case we don't have to declare any <code>performs</code> on <code>main</code>:</p>
+<pre data-lang="java-effects" style="background-color:#ffffff;color:#010101;" class="language-java-effects "><code class="language-java-effects" data-lang="java-effects"><span style="color:#014a69;">public </span><span style="color:#877611;">class </span><span style="color:#a15001;">LogExample </span><span>{
+</span><span>    </span><span style="color:#014a69;">public static </span><span style="color:#877611;">void </span><span style="color:#a15001;">main</span><span>(</span><span style="color:#646409;">String</span><span style="color:#014a69;">[] </span><span style="color:#696989;">args</span><span>) {
+</span><span>        </span><span style="color:#646409;">JndiLogger</span><span> logger </span><span style="color:#016692;">= </span><span style="color:#646409;">LogManager</span><span>.</span><span style="color:#696989;">getJndiLogger</span><span>();
+</span><span>        </span><span style="color:#016692;">try </span><span>{
+</span><span>            </span><span style="color:#646409;">JndiLogger</span><span>.</span><span style="color:#696989;">debug</span><span>(</span><span style="color:#009f78;">&quot;Here is a log message.&quot;</span><span>);
+</span><span>        } </span><span style="color:#016692;">handle </span><span>(</span><span style="color:#646409;">JndiLookup</span><span> lookup) {
+</span><span>            </span><span style="color:#016692;">resume </span><span style="color:#009f78;">&quot;[no JNDI lookups allowed]&quot;</span><span>;
+</span><span>        }
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>Similar to capabilities, an effect system encodes security-sensitive side effects in the function signatures, which makes it easy to identify when code is doing something unexpected that we should take note of.</p>
+<h1 id="current-implementations">Current implementations</h1>
+<p>There are already several languages that implement these concepts.</p>
+<p><a href="https://koka-lang.github.io/koka/doc/index.html">Koka</a>, by Microsoft, is built around effect handlers. <a href="https://discuss.ocaml.org/t/multicore-ocaml-september-2021-effect-handlers-will-be-in-ocaml-5-0/8554">OCaml 5.0 got support for effects</a>, with more improvements coming in future versions.</p>
+<p>The <a href="http://wiki.erights.org/wiki/Main_Page">E language</a> is an Object Oriented language built around capabilities. Their site also has a bunch of other resources for learning more about capabilities, including this example of <a href="http://www.erights.org/elib/capability/ode/ode-capabilities.html">a simple digital currency</a>.</p>
+<h1 id="summary">Summary</h1>
+<p>The current software supply chain situation is not sustainable: as Ken Thompson observed in the 80s, we cannot reliably expect to visually audit even a small amount of code, and the amount of open source code we use isn't small. Going forward, programming languages will need to adopt new features that make it easy to see security flaws early in the development process.</p>
+<p>Capabilities and effect systems are two such systems that could be used to create more security programming languages. I've provided some simple examples of how these might be implemented in a language like Java. There are many flaws with these solutions—I intend them primarily to illustrate that implementing these features is both possible and could be added in a way that is in line with existing idioms.</p>
+<p>Successfully implementing either approach in an existing language would require breaking changes, but the security improvements would be well worth the migration difficulties. We can't keep going the way we are, and both capabilities and effects offer a compelling path forward for greater security in our programming languages.</p>
+<div class="footnote-definition" id="1"><sup class="footnote-definition-label">1</sup>
+<p><a href="https://www.shiftleft.io/blog/log4shell-jndi-injection-via-attackable-log4j/">See this article for background on Log4Shell and JNDI.</a> For this post, it's sufficient to know that JNDI is a Java feature that allows executing remote code, and Log4J intentionally allowed using JNDI when logging, which created the vulnerability known as Log4Shell.</p>
+</div>
+<div class="footnote-definition" id="2"><sup class="footnote-definition-label">2</sup>
+<p><a href="https://dl.acm.org/doi/pdf/10.1145/358198.358210">https://dl.acm.org/doi/pdf/10.1145/358198.358210</a></p>
+</div>
+<div class="footnote-definition" id="3"><sup class="footnote-definition-label">3</sup>
+<p><a href="https://en.wikipedia.org/wiki/Object-capability_model">https://en.wikipedia.org/wiki/Object-capability_model</a></p>
+</div>
+<div class="footnote-definition" id="4"><sup class="footnote-definition-label">4</sup>
+<p><a href="https://docs.scala-lang.org/scala3/reference/contextual/using-clauses.html">https://docs.scala-lang.org/scala3/reference/contextual/using-clauses.html</a></p>
+</div>
+
+  </div>
+
+	
+
+  <div class="pagination">
+  	
+		<a href="#" class="top">Top</a>
+		
+  </div>
+
+  </main>
+
+  
+  <footer>
+    <span>&copy; 2022 Nathan Schulzke. Made with <a href="https://www.getzola.org">Zola</a> using the <a
+          href="https://github.com/aaranxu/tale-zola">Tale-Zola</a> theme.</span>
+  </footer>
+  
+  <script>
+    // Copied from https://github.com/getzola/zola/issues/1070#issuecomment-1166637092
+    // The DOMContentLoaded event fires when the initial HTML
+    // document has been completely loaded and parsed, without
+    // waiting for stylesheets, images, and subframes to finish loading.
+    document.addEventListener('DOMContentLoaded', (_event) => {
+      const references = document.getElementsByClassName('footnote-reference')
+      // For each footnote reference, set an id so we can refer to it from the definition.
+      // If the definition had an id of 'some_id', then the reference has id `some_id_ref`.
+      for (const reference of references) {
+        const link = reference.firstChild
+        const id = link.getAttribute('href').slice(1) // skip the '#'
+        link.setAttribute('id', `${id}_ref`)
+      }
+
+      const footnotes = document.getElementsByClassName('footnote-definition')
+      // For each footnote-definition, add an anchor element with an href to its corresponding reference.
+      // The text used for the added anchor is 'Leftwards Arrow with Hook' (U+21A9).
+      for (const footnote of footnotes) {
+        const id = footnote.getAttribute('id')
+        const backReference = document.createElement('a')
+        backReference.setAttribute('href', `#${id}_ref`)
+        backReference.classList.add('footnote-back')
+        backReference.textContent = '↩'
+        footnote.append(backReference)
+      }
+    });
+  </script>
+</body>
+</html>

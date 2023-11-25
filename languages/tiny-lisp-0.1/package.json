@@ -1,0 +1,12 @@
+{
+  "name": "lisp",
+  "version": "0.1.0",
+  "files": [
+    "lisp_bg.wasm",
+    "lisp.js",
+    "lisp.d.ts"
+  ],
+  "module": "lisp.js",
+  "types": "lisp.d.ts",
+  "sideEffects": false
+}
